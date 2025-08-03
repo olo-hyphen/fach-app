@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FachowiecApp - Kompletne zarządzanie</title>
+    <meta name="description" content="Kompletna aplikacja PWA dla fachowców - Dashboard KPI, zarządzanie zleceniami, baza klientów CRM, kalkulatory kosztów, fakturowanie PDF">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="container">
+                <div class="nav-content">
+                    <div class="nav-brand">
+                        <h1>FachowiecApp</h1>
+                    </div>
+                    <div class="nav-items">
+                        <button class="nav-item active" data-section="dashboard">
+                            <span>📊</span> Dashboard
+                        </button>
+                        <button class="nav-item" data-section="orders">
+                            <span>📋</span> Zlecenia
+                        </button>
+                        <button class="nav-item" data-section="finances">
+                            <span>💰</span> Finanse
+                        </button>
+                        <button class="nav-item" data-section="time-tracking">
+                            <span>⏱️</span> Czas pracy
+                        </button>
+                        <button class="nav-item" data-section="clients">
+                            <span>👥</span> Klienci
+                        </button>
+                        <button class="nav-item" data-section="calculators">
+                            <span>🧮</span> Kalkulatory
+                        </button>
+                        <button class="nav-item" data-section="gallery">
+                            <span>📷</span> Galeria
+                        </button>
+                    </div>
+                    <div class="nav-actions">
+                        <button class="btn btn--outline btn--sm" id="themeToggle">
+                            <span id="themeIcon">🌙</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="app-section active">
+                <div class="container">
+                    <!-- Date Range Selector -->
+                    <div class="date-selector">
+                        <div class="date-selector-header">
+                            <h2>Wybierz okres analizy</h2>
+                            <div class="selected-period" id="selectedPeriod">
+                                Ostatnie 7 dni
+                            </div>
+                        </div>
+                        <div class="date-options">
+                            <button class="date-btn" data-range="today">Dziś</button>
+                            <button class="date-btn active" data-range="week">7 dni</button>
+                            <button class="date-btn" data-range="month">30 dni</button>
+                            <button class="date-btn" data-range="quarter">90 dni</button>
+                            <button class="date-btn" data-range="custom">Niestandardowy</button>
+                        </div>
+                        <div class="custom-date-range hidden" id="customDateRange">
+                            <div class="form-group">
+                                <label class="form-label">Data od:</label>
+                                <input type="date" id="dateFrom" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data do:</label>
+                                <input type="date" id="dateTo" class="form-control">
+                            </div>
+                            <button class="btn btn--primary" id="applyCustomRange">Zastosuj</button>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards Grid -->
+                    <div class="kpi-section">
+                        <h2 class="section-title">Kluczowe wskaźniki wydajności</h2>
+                        <div class="kpi-grid">
+                            <div class="kpi-card" data-kpi="orders">
+                                <div class="kpi-header">
+                                    <div class="kpi-icon orders">📋</div>
+                                    <div class="kpi-trend" id="ordersTrend">
+                                        <span class="trend-icon">📈</span>
+                                        <span class="trend-value">+12%</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-value" id="totalOrders">0</div>
+                                    <div class="kpi-label">Zrealizowane zlecenia</div>
+                                    <div class="kpi-details">w wybranym okresie</div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card" data-kpi="revenue">
+                                <div class="kpi-header">
+                                    <div class="kpi-icon revenue">💰</div>
+                                    <div class="kpi-trend" id="revenueTrend">
+                                        <span class="trend-icon">📈</span>
+                                        <span class="trend-value">+18%</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-value" id="totalRevenue">0 zł</div>
+                                    <div class="kpi-label">Łączne przychody</div>
+                                    <div class="kpi-details">Średnio <span id="avgRevenue">0 zł</span> na zlecenie</div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card" data-kpi="paid">
+                                <div class="kpi-header">
+                                    <div class="kpi-icon paid">✅</div>
+                                    <div class="kpi-trend" id="paidTrend">
+                                        <span class="trend-icon">📈</span>
+                                        <span class="trend-value">+15%</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-value" id="paidRevenue">0 zł</div>
+                                    <div class="kpi-label">Opłacone przychody</div>
+                                    <div class="kpi-details">Należności: <span id="unpaidRevenue">0 zł</span></div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card" data-kpi="clients">
+                                <div class="kpi-header">
+                                    <div class="kpi-icon clients">👥</div>
+                                    <div class="kpi-trend" id="clientsTrend">
+                                        <span class="trend-icon">📈</span>
+                                        <span class="trend-value">+8%</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-value" id="totalClients">0</div>
+                                    <div class="kpi-label">Baza klientów</div>
+                                    <div class="kpi-details">aktywnych klientów</div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card" data-kpi="rating">
+                                <div class="kpi-header">
+                                    <div class="kpi-icon rating">⭐</div>
+                                    <div class="kpi-trend" id="ratingTrend">
+                                        <span class="trend-icon">📈</span>
+                                        <span class="trend-value">+0.2</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-value" id="avgRating">0.0</div>
+                                    <div class="kpi-label">Średnia ocena klienta</div>
+                                    <div class="kpi-details">z 5.0 możliwych</div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card" data-kpi="active">
+                                <div class="kpi-header">
+                                    <div class="kpi-icon active">🚀</div>
+                                    <div class="kpi-trend" id="activeTrend">
+                                        <span class="trend-icon">📈</span>
+                                        <span class="trend-value">+3</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-value" id="activeOrders">0</div>
+                                    <div class="kpi-label">Aktywne zlecenia</div>
+                                    <div class="kpi-details">w trakcie realizacji</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-section">
+                        <h2 class="section-title">Analiza trendów</h2>
+                        <div class="charts-grid">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3>Trend przychodów</h3>
+                                </div>
+                                <div class="chart-wrapper" style="position: relative; height: 300px;">
+                                    <canvas id="revenueChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3>Status płatności</h3>
+                                    <div class="chart-legend" id="paymentLegend"></div>
+                                </div>
+                                <div class="chart-wrapper" style="position: relative; height: 300px;">
+                                    <canvas id="paymentChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3>Status zleceń</h3>
+                                    <div class="chart-legend" id="statusLegend"></div>
+                                </div>
+                                <div class="chart-wrapper" style="position: relative; height: 300px;">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3>Miesięczne przychody</h3>
+                                </div>
+                                <div class="chart-wrapper" style="position: relative; height: 300px;">
+                                    <canvas id="monthlyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders Section -->
+            <section id="ordersSection" class="app-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Zarządzanie zleceniami</h2>
+                        <button class="btn btn--primary" id="addOrderBtn">
+                            <span>➕</span> Dodaj zlecenie
+                        </button>
+                    </div>
+
+                    <div class="orders-filters">
+                        <input type="text" id="searchOrders" class="form-control" placeholder="Szukaj zleceń...">
+                        <select id="statusFilter" class="form-control">
+                            <option value="">Wszystkie statusy</option>
+                            <option value="pending">Oczekujące</option>
+                            <option value="in-progress">W trakcie</option>
+                            <option value="completed">Zakończone</option>
+                        </select>
+                        <select id="clientFilter" class="form-control">
+                            <option value="">Wszyscy klienci</option>
+                        </select>
+                    </div>
+
+                    <div class="orders-list" id="ordersList">
+                        <div class="loading">Ładowanie zleceń...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Finances Section -->
+            <section id="financesSection" class="app-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Finanse i Fakturowanie</h2>
+                    </div>
+
+                    <!-- Financial Summary -->
+                    <div class="financial-summary">
+                        <div class="summary-cards">
+                            <div class="summary-card paid">
+                                <div class="summary-icon">✅</div>
+                                <div class="summary-content">
+                                    <div class="summary-value" id="totalPaidAmount">0 zł</div>
+                                    <div class="summary-label">Opłacone</div>
+                                </div>
+                            </div>
+                            <div class="summary-card unpaid">
+                                <div class="summary-icon">⏳</div>
+                                <div class="summary-content">
+                                    <div class="summary-value" id="totalUnpaidAmount">0 zł</div>
+                                    <div class="summary-label">Należności</div>
+                                </div>
+                            </div>
+                            <div class="summary-card total">
+                                <div class="summary-icon">💰</div>
+                                <div class="summary-content">
+                                    <div class="summary-value" id="totalFinancialAmount">0 zł</div>
+                                    <div class="summary-label">Łącznie</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoices List -->
+                    <div class="invoices-section">
+                        <h3>Lista zleceń z możliwością fakturowania</h3>
+                        <div class="invoices-filters">
+                            <select id="paymentStatusFilter" class="form-control">
+                                <option value="">Wszystkie</option>
+                                <option value="paid">Opłacone</option>
+                                <option value="unpaid">Nieopłacone</option>
+                            </select>
+                            <input type="text" id="searchInvoices" class="form-control" placeholder="Szukaj po kliencie lub opisie...">
+                        </div>
+                        <div class="invoices-list" id="invoicesList">
+                            <div class="loading">Ładowanie danych finansowych...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Time Tracking Section -->
+            <section id="time-trackingSection" class="app-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Śledzenie czasu pracy</h2>
+                        <button class="btn btn--primary" id="startTimerBtn">
+                            <span>▶️</span> Rozpocznij timer
+                        </button>
+                    </div>
+
+                    <!-- Active Timer -->
+                    <div class="timer-section hidden" id="activeTimer">
+                        <div class="timer-display">
+                            <div class="timer-time" id="timerDisplay">00:00:00</div>
+                            <div class="timer-task" id="timerTask">Brak aktywnego zadania</div>
+                        </div>
+                        <div class="timer-controls">
+                            <button class="btn btn--secondary" id="pauseTimerBtn">⏸️ Pauza</button>
+                            <button class="btn btn--primary" id="stopTimerBtn">⏹️ Zakończ</button>
+                        </div>
+                    </div>
+
+                    <!-- Time Log -->
+                    <div class="time-log-section">
+                        <h3>Historia czasu pracy</h3>
+                        <div class="time-log" id="timeLog">
+                            <div class="empty-state">Brak zapisanych sesji pracy</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Clients Section -->
+            <section id="clientsSection" class="app-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Baza klientów - CRM</h2>
+                        <button class="btn btn--primary" id="addClientBtn">
+                            <span>➕</span> Dodaj klienta
+                        </button>
+                    </div>
+
+                    <div class="clients-filters">
+                        <input type="text" id="searchClients" class="form-control" placeholder="Szukaj klientów...">
+                        <select id="sortClients" class="form-control">
+                            <option value="name">Sortuj wg nazwy</option>
+                            <option value="date">Sortuj wg daty dodania</option>
+                            <option value="orders">Sortuj wg liczby zleceń</option>
+                        </select>
+                    </div>
+
+                    <div class="clients-list" id="clientsList">
+                        <div class="loading">Ładowanie klientów...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calculators Section -->
+            <section id="calculatorsSection" class="app-section">
+                <div class="container">
+                    <h2 class="section-title">Kalkulatory kosztów</h2>
+                    
+                    <div class="calculators-grid">
+                        <div class="calculator-card" data-type="painting">
+                            <h3>🎨 Kalkulator farby</h3>
+                            <p>Oblicz ilość farby potrzebnej do malowania</p>
+                            <button class="btn btn--primary calc-btn">Otwórz kalkulator</button>
+                        </div>
+                        
+                        <div class="calculator-card" data-type="flooring">
+                            <h3>🏠 Kalkulator podłóg</h3>
+                            <p>Oblicz powierzchnię i koszt podłóg</p>
+                            <button class="btn btn--primary calc-btn">Otwórz kalkulator</button>
+                        </div>
+                        
+                        <div class="calculator-card" data-type="tiles">
+                            <h3>🔲 Kalkulator płytek</h3>
+                            <p>Oblicz liczbę płytek i koszt materiału</p>
+                            <button class="btn btn--primary calc-btn">Otwórz kalkulator</button>
+                        </div>
+                    </div>
+
+                    <div class="calculation-history">
+                        <h3>Historia obliczeń</h3>
+                        <div id="calculationHistory" class="history-list">
+                            <div class="empty-state">Brak zapisanych obliczeń</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gallery Section -->
+            <section id="gallerySection" class="app-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Dokumentacja fotograficzna</h2>
+                        <button class="btn btn--primary" id="takePhotoBtn">
+                            <span>📷</span> Zrób zdjęcie
+                        </button>
+                    </div>
+
+                    <div class="camera-section hidden" id="cameraSection">
+                        <video id="cameraStream" autoplay playsinline></video>
+                        <div class="camera-controls">
+                            <button class="btn btn--primary" id="captureBtn">📸 Zrób zdjęcie</button>
+                            <button class="btn btn--secondary" id="closeCameraBtn">❌ Zamknij</button>
+                        </div>
+                    </div>
+
+                    <canvas id="photoCanvas" style="display: none;"></canvas>
+
+                    <div class="photo-gallery" id="photoGallery">
+                        <div class="empty-state">Brak zdjęć. Zrób pierwsze zdjęcie używając kamery.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Order Modal -->
+        <div id="orderModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="orderModalTitle">Dodaj zlecenie</h3>
+                    <button class="modal-close" id="closeOrderModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="orderForm">
+                        <div class="form-group">
+                            <label class="form-label">Klient</label>
+                            <select id="orderClient" class="form-control" required>
+                                <option value="">Wybierz klienta</option>
+                            </select>
+                            <button type="button" class="btn btn--outline btn--sm mt-8" id="addClientFromOrder">
+                                + Dodaj nowego klienta
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Opis zlecenia</label>
+                            <textarea id="orderDescription" class="form-control" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kategoria</label>
+                            <select id="orderCategory" class="form-control" required>
+                                <option value="Malowanie">Malowanie</option>
+                                <option value="Płytki">Płytki</option>
+                                <option value="Remont">Remont</option>
+                                <option value="Hydraulika">Hydraulika</option>
+                                <option value="Elektryka">Elektryka</option>
+                                <option value="Inne">Inne</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Koszt materiałów (zł)</label>
+                            <input type="number" id="orderCost" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cena zlecenia (zł)</label>
+                            <input type="number" id="orderPrice" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Szacowany czas (godziny)</label>
+                            <input type="number" id="orderHours" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data realizacji</label>
+                            <input type="date" id="orderDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select id="orderStatus" class="form-control" required>
+                                <option value="pending">Oczekujące</option>
+                                <option value="in-progress">W trakcie</option>
+                                <option value="completed">Zakończone</option>
+                            </select>
+                        </div>
+                        <div id="ratingGroup" class="form-group hidden">
+                            <label class="form-label">Ocena klienta (1-5)</label>
+                            <input type="number" id="orderRating" class="form-control" min="1" max="5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Notatki</label>
+                            <textarea id="orderNotes" class="form-control" placeholder="Dodatkowe informacje o zleceniu..."></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn--secondary" id="cancelOrderBtn">Anuluj</button>
+                            <button type="submit" class="btn btn--primary">Zapisz</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Modal -->
+        <div id="clientModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="clientModalTitle">Dodaj klienta</h3>
+                    <button class="modal-close" id="closeClientModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="clientForm">
+                        <div class="form-group">
+                            <label class="form-label">Imię i nazwisko / Nazwa firmy *</label>
+                            <input type="text" id="clientName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telefon</label>
+                            <input type="tel" id="clientPhone" class="form-control" placeholder="+48 123 456 789">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="clientEmail" class="form-control" placeholder="klient@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Adres</label>
+                            <textarea id="clientAddress" class="form-control" placeholder="ul. Kwiatowa 15, 00-001 Warszawa"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Prywatne notatki</label>
+                            <textarea id="clientNote" class="form-control" placeholder="np. preferuje kontakt po 17:00"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn--secondary" id="cancelClientBtn">Anuluj</button>
+                            <button type="submit" class="btn btn--primary">Zapisz</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer Modal -->
+        <div id="timerModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Nowy timer pracy</h3>
+                    <button class="modal-close" id="closeTimerModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="timerForm">
+                        <div class="form-group">
+                            <label class="form-label">Nazwa zadania</label>
+                            <input type="text" id="timerTaskName" class="form-control" required placeholder="Np. Malowanie pokoju">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Powiązane zlecenie (opcjonalnie)</label>
+                            <select id="timerOrderId" class="form-control">
+                                <option value="">Brak powiązania</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn--secondary" id="cancelTimerBtn">Anuluj</button>
+                            <button type="submit" class="btn btn--primary">Rozpocznij timer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Details Modal -->
+        <div id="clientDetailsModal" class="modal hidden">
+            <div class="modal-content client-details-modal">
+                <div class="modal-header">
+                    <h3 id="clientDetailsTitle">Szczegóły klienta</h3>
+                    <button class="modal-close" id="closeClientDetailsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="clientDetailsContent">
+                        <div class="loading">Ładowanie szczegółów klienta...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator Modal -->
+        <div id="calculatorModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="calculatorModalTitle">Kalkulator</h3>
+                    <button class="modal-close" id="closeCalculatorModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="calculatorContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Modal -->
+        <div id="photoModal" class="modal hidden">
+            <div class="modal-content photo-modal-content">
+                <div class="modal-header">
+                    <h3 id="photoModalTitle">Zdjęcie</h3>
+                    <button class="modal-close" id="closePhotoModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <img id="photoModalImage" src="" alt="Zdjęcie">
+                    <div class="photo-actions">
+                        <input type="text" id="photoCaption" class="form-control" placeholder="Dodaj opis zdjęcia...">
+                        <button class="btn btn--primary" id="savePhotoCaption">Zapisz opis</button>
+                        <button class="btn btn--error" id="deletePhoto">Usuń zdjęcie</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Przetwarzanie...</div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
